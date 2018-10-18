@@ -1,79 +1,42 @@
-;;; init.el --- Bozhidar's Emacs configuration
-;;
-;; Copyright (c) 2016 Bozhidar Batsov
-;;
-;; Author: Bozhidar Batsov <bozhidar@batsov.com>
-;; URL: https://github.com/bbatsov/emacs.d
-;; Keywords: convenience
-
-;; This file is not part of GNU Emacs.
-
-;;; Commentary:
-
-;; This is my personal Emacs configuration.  Nothing more, nothing less.
-
-;;; License:
-
-;; This program is free software; you can redistribute it and/or
-;; modify it under the terms of the GNU General Public License
-;; as published by the Free Software Foundation; either version 3
-;; of the License, or (at your option) any later version.
-;;
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-;;
-;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to the
-;; Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-;; Boston, MA 02110-1301, USA.
-
-;;; Code:
-
 (require 'package)
-
-(add-to-list 'package-archives
-             '("melpa" . "https://melpa.org/packages/") t)
-;; keep the installed packages in .emacs.d
-(setq package-user-dir (expand-file-name "elpa" user-emacs-directory))
+(let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
+                    (not (gnutls-available-p))))
+       (proto (if no-ssl "http" "https")))
+  ;; Comment/uncomment these two lines to enable/disable MELPA and MELPA Stable as desired
+  (add-to-list 'package-archives (cons "melpa" (concat proto "://melpa.org/packages/")) t)
+  ;;(add-to-list 'package-archives (cons "melpa-stable" (concat proto "://stable.melpa.org/packages/")) t)
+  (when (< emacs-major-version 24)
+    ;; For important compatibility libraries like cl-lib
+    (add-to-list 'package-archives (cons "gnu" (concat proto "://elpa.gnu.org/packages/")))))
 (package-initialize)
-;; update the package metadata is the local cache is missing
+
 (unless package-archive-contents
   (package-refresh-contents))
 
-(setq user-full-name "Bozhidar Batsov"
-      user-mail-address "bozhidar@batsov.com")
+(setq user-full-name "Vijay Akkineni"
+      user-mail-address "vakkineni@cardlytics.com")
 
-;; Always load newest byte code
 (setq load-prefer-newer t)
-
-;; reduce the frequency of garbage collection by making it happen on
-;; each 50MB of allocated data (the default is on every 0.76MB)
 (setq gc-cons-threshold 50000000)
+
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
+(add-to-list 'default-frame-alist '(font . "Hack-16"))
+(set-face-attribute 'default t :font  "Hack-16")
 
 ;; warn when opening files bigger than 100MB
 (setq large-file-warning-threshold 100000000)
 
-(defconst bozhidar-savefile-dir (expand-file-name "savefile" user-emacs-directory))
+(defconst akkineni-savefile-dir (expand-file-name "savefile" user-emacs-directory))
 
 ;; create the savefile dir if it doesn't exist
-(unless (file-exists-p bozhidar-savefile-dir)
-  (make-directory bozhidar-savefile-dir))
+(unless (file-exists-p akkineni-savefile-dir)
+  (make-directory akkineni-savefile-dir))
 
-;; the toolbar is just a waste of valuable screen estate
-;; in a tty tool-bar-mode does not properly auto-load, and is
-;; already disabled anyway
 (when (fboundp 'tool-bar-mode)
   (tool-bar-mode -1))
 
-;; the blinking cursor is nothing, but an annoyance
-(blink-cursor-mode -1)
-
-;; disable the annoying bell ring
 (setq ring-bell-function 'ignore)
-
-;; disable startup screen
+(blink-cursor-mode -1)
 (setq inhibit-startup-screen t)
 
 ;; nice scrolling
@@ -85,8 +48,6 @@
 (line-number-mode t)
 (column-number-mode t)
 (size-indication-mode t)
-
-;; enable y/n answers
 (fset 'yes-or-no-p 'y-or-n-p)
 
 ;; more useful frame title, that show either a file or a
@@ -96,26 +57,10 @@
                    (abbreviate-file-name (buffer-file-name))
                  "%b"))))
 
-;; Emacs modes typically provide a standard means to change the
-;; indentation width -- eg. c-basic-offset: use that to adjust your
-;; personal indentation width, while maintaining the style (and
-;; meaning) of any files you load.
 (setq-default indent-tabs-mode nil)   ;; don't use tabs to indent
 (setq-default tab-width 8)            ;; but maintain correct appearance
-
-;; Newline at end of file
 (setq require-final-newline t)
-
-;; delete the selection with a keypress
 (delete-selection-mode t)
-
-;; store all backup and autosave files in the tmp dir
-(setq backup-directory-alist
-      `((".*" . ,temporary-file-directory)))
-(setq auto-save-file-name-transforms
-      `((".*" ,temporary-file-directory t)))
-
-;; revert buffers automatically when underlying files are changed externally
 (global-auto-revert-mode t)
 
 (prefer-coding-system 'utf-8)
@@ -123,33 +68,17 @@
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
 
-;; hippie expand is dabbrev expand on steroids
-(setq hippie-expand-try-functions-list '(try-expand-dabbrev
-                                         try-expand-dabbrev-all-buffers
-                                         try-expand-dabbrev-from-kill
-                                         try-complete-file-name-partially
-                                         try-complete-file-name
-                                         try-expand-all-abbrevs
-                                         try-expand-list
-                                         try-expand-line
-                                         try-complete-lisp-symbol-partially
-                                         try-complete-lisp-symbol))
-
-;; use hippie-expand instead of dabbrev
-(global-set-key (kbd "M-/") #'hippie-expand)
-(global-set-key (kbd "s-/") #'hippie-expand)
+;; store all backup and autosave files in the tmp dir
+(setq backup-directory-alist
+      `((".*" . ,temporary-file-directory)))
+(setq auto-save-file-name-transforms
+      `((".*" ,temporary-file-directory t)))
 
 ;; replace buffer-menu with ibuffer
 (global-set-key (kbd "C-x C-b") #'ibuffer)
 
 ;; align code in a pretty way
 (global-set-key (kbd "C-x \\") #'align-regexp)
-
-;; extend the help commands
-(define-key 'help-command (kbd "C-f") #'find-function)
-(define-key 'help-command (kbd "C-k") #'find-function-on-key)
-(define-key 'help-command (kbd "C-v") #'find-variable)
-(define-key 'help-command (kbd "C-l") #'find-library)
 
 (define-key 'help-command (kbd "C-i") #'info-display-manual)
 
@@ -167,6 +96,8 @@
 
 (require 'use-package)
 (setq use-package-verbose t)
+
+(global-hl-line-mode +1)
 
 (use-package lisp-mode
   :config
@@ -189,41 +120,6 @@ Start `ielm' if it's not already running."
   (add-hook 'ielm-mode-hook #'eldoc-mode)
   (add-hook 'ielm-mode-hook #'rainbow-delimiters-mode))
 
-(use-package zenburn-theme
-  :ensure t
-  :config
-  (load-theme 'zenburn t))
-
-;; highlight the current line
-(global-hl-line-mode +1)
-
-(use-package avy
-  :ensure t
-  :bind (("s-." . avy-goto-word-or-subword-1)
-         ("s-," . avy-goto-char))
-  :config
-  (setq avy-background t))
-
-(use-package magit
-  :ensure t
-  :bind (("C-x g" . magit-status)))
-
-(use-package ag
-  :ensure t)
-
-(use-package projectile
-  :ensure t
-  :bind ("s-p" . projectile-command-map)
-  :config
-  (projectile-global-mode +1))
-
-(use-package pt
-  :ensure t)
-
-(use-package expand-region
-  :ensure t
-  :bind ("C-=" . er/expand-region))
-
 (use-package elisp-slime-nav
   :ensure t
   :config
@@ -240,9 +136,109 @@ Start `ielm' if it's not already running."
   (add-hook 'lisp-mode-hook #'paredit-mode)
   (add-hook 'eval-expression-minibuffer-setup-hook #'paredit-mode))
 
+(use-package avy
+  :ensure t
+  :bind (("s-." . avy-goto-word-or-subword-1)
+         ("s-," . avy-goto-char))
+  :config
+  (setq avy-background t))
+
+(use-package rainbow-delimiters
+  :ensure t
+  :init
+  (progn
+    (add-hook 'prog-mode-hook 'rainbow-delimiters-mode)))
+
+(use-package rainbow-mode
+  :ensure t
+  :config
+  (add-hook 'prog-mode-hook #'rainbow-mode))
+
+(use-package aggressive-indent
+  :ensure t
+  :init
+  (progn
+    (global-aggressive-indent-mode 1)))
+
+(use-package ag
+  :ensure t)
+
+(use-package spacemacs-theme
+  :defer t
+  :init (load-theme 'spacemacs-dark t))
+
+(use-package magit
+  :ensure t
+  :bind (("C-x g" . magit-status)))
+
+(use-package git-timemachine
+  :ensure t
+  :bind (("s-g" . git-timemachine)))
+
 (use-package paren
   :config
   (show-paren-mode +1))
+
+(use-package which-key
+  :ensure t
+  :config
+  (which-key-mode +1))
+
+(use-package flx
+  :ensure t)
+
+(use-package ivy
+  :ensure t
+  :config
+  (ivy-mode 1)
+  (setq ivy-use-virtual-buffers t)
+  ;; use flx matching instead of the default
+  ;; see https://oremacs.com/2016/01/06/ivy-flx/ for details
+  (setq ivy-re-builders-alist
+        '((t . ivy--regex-fuzzy)))
+  (setq ivy-initial-inputs-alist nil)
+  (setq enable-recursive-minibuffers t)
+  (global-set-key (kbd "C-c C-r") 'ivy-resume)
+  (global-set-key (kbd "<f6>") 'ivy-resume))
+
+(use-package swiper
+  :ensure t
+  :config
+  (global-set-key "\C-s" 'swiper))
+
+(use-package counsel
+  :ensure t
+  :config
+  (global-set-key (kbd "M-x") 'counsel-M-x)
+  (global-set-key (kbd "C-x C-f") 'counsel-find-file)
+  (global-set-key (kbd "<f1> f") 'counsel-describe-function)
+  (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
+  (global-set-key (kbd "<f1> l") 'counsel-find-library)
+  (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
+  (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
+  (global-set-key (kbd "C-c g") 'counsel-git)
+  (global-set-key (kbd "C-c j") 'counsel-git-grep)
+  (global-set-key (kbd "C-c a") 'counsel-ag)
+  (global-set-key (kbd "C-x l") 'counsel-locate)
+  (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history))
+
+(use-package projectile
+  :ensure t
+  :init
+  (setq projectile-completion-system 'ivy)
+  :config
+  (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
+  (projectile-mode +1))
+
+(use-package ace-window
+  :ensure t
+  :config
+  (global-set-key (kbd "s-w") 'ace-window)
+  (global-set-key [remap other-window] 'ace-window))
+
+(use-package expand-region
+  :ensure t
+  :bind ("C-=" . er/expand-region))
 
 (use-package abbrev
   :config
@@ -259,10 +255,9 @@ Start `ielm' if it's not already running."
   (setq uniquify-ignore-buffers-re "^\\*"))
 
 ;; saveplace remembers your location in a file when saving files
-(require 'saveplace)
 (use-package saveplace
   :config
-  (setq save-place-file (expand-file-name "saveplace" bozhidar-savefile-dir))
+  (setq save-place-file (expand-file-name "saveplace" akkineni-savefile-dir))
   ;; activate it for all buffers
   (setq-default save-place t))
 
@@ -274,12 +269,12 @@ Start `ielm' if it's not already running."
         ;; save every minute
         savehist-autosave-interval 60
         ;; keep the home clean
-        savehist-file (expand-file-name "savehist" bozhidar-savefile-dir))
+        savehist-file (expand-file-name "savehist" akkineni-savefile-dir))
   (savehist-mode +1))
 
 (use-package recentf
   :config
-  (setq recentf-save-file (expand-file-name "recentf" bozhidar-savefile-dir)
+  (setq recentf-save-file (expand-file-name "recentf" akkineni-savefile-dir)
         recentf-max-saved-items 500
         recentf-max-menu-items 15
         ;; disable recentf-cleanup on Emacs start, because it can cause
@@ -313,7 +308,7 @@ Start `ielm' if it's not already running."
   :bind (("M-%" . anzu-query-replace)
          ("C-M-%" . anzu-query-replace-regexp))
   :config
-  (global-anzu-mode))
+  (global-anzu-mode +1))
 
 (use-package easy-kill
   :ensure t
@@ -326,20 +321,6 @@ Start `ielm' if it's not already running."
   (when (memq window-system '(mac ns))
     (exec-path-from-shell-initialize)))
 
-(use-package move-text
-  :ensure t
-  :bind
-  (([(meta shift up)] . move-text-up)
-   ([(meta shift down)] . move-text-down)))
-
-(use-package rainbow-delimiters
-  :ensure t)
-
-(use-package rainbow-mode
-  :ensure t
-  :config
-  (add-hook 'prog-mode-hook #'rainbow-mode))
-
 (use-package whitespace
   :init
   (dolist (hook '(prog-mode-hook text-mode-hook))
@@ -349,116 +330,28 @@ Start `ielm' if it's not already running."
   (setq whitespace-line-column 80) ;; limit line length
   (setq whitespace-style '(face tabs empty trailing lines-tail)))
 
-(use-package inf-ruby
-  :ensure t
-  :config
-  (add-hook 'ruby-mode-hook #'inf-ruby-minor-mode))
-
-(use-package ruby-mode
-  :config
-  (add-hook 'ruby-mode-hook #'subword-mode))
-
-(use-package clojure-mode
-  :ensure t
-  :config
-  (add-hook 'clojure-mode-hook #'paredit-mode)
-  (add-hook 'clojure-mode-hook #'subword-mode)
-  (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
-
-(use-package cider
-  :ensure t
-  :config
-  (add-hook 'cider-mode-hook #'eldoc-mode)
-  (add-hook 'cider-repl-mode-hook #'eldoc-mode)
-  (add-hook 'cider-repl-mode-hook #'paredit-mode)
-  (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode))
-
-(use-package elixir-mode
-  :ensure t
-  :config
-  (add-hook 'elixir-mode #'subword-mode))
-
-(use-package erlang
-  :ensure t)
-
-(use-package ido
-  :ensure t
-  :config
-  (setq ido-enable-prefix nil
-        ido-enable-flex-matching t
-        ido-create-new-buffer 'always
-        ido-use-filename-at-point 'guess
-        ido-max-prospects 10
-        ido-save-directory-list-file (expand-file-name "ido.hist" bozhidar-savefile-dir)
-        ido-default-file-method 'selected-window
-        ido-auto-merge-work-directories-length -1)
-  (ido-mode +1))
-
-(use-package ido-ubiquitous
-  :ensure t
-  :config
-  (ido-ubiquitous-mode +1))
-
-(use-package flx-ido
-  :ensure t
-  :config
-  (flx-ido-mode +1)
-  ;; disable ido faces to see flx highlights
-  (setq ido-use-faces nil))
-
-(use-package smex
-  :ensure t
-  :bind ("M-x" . smex))
-
-(use-package markdown-mode
-  :ensure t)
-
 (use-package yaml-mode
-  :ensure t)
-
-(use-package cask-mode
   :ensure t)
 
 (use-package company
   :ensure t
   :config
+  (setq company-idle-delay 0.5)
+  (setq company-show-numbers t)
+  (setq company-tooltip-limit 10)
+  (setq company-minimum-prefix-length 2)
+  (setq company-tooltip-align-annotations t)
+  ;; invert the navigation direction if the the completion popup-isearch-match
+  ;; is displayed on top (happens near the bottom of windows)
+  (setq company-tooltip-flip-when-above t)
   (global-company-mode))
-
-(use-package zop-to-char
-  :ensure t
-  :bind (("M-z" . zop-up-to-char)
-         ("M-Z" . zop-to-char)))
-
-(use-package imenu-anywhere
-  :ensure t
-  :bind (("C-c i" . imenu-anywhere)
-         ("s-i" . imenu-anywhere)))
-
-(use-package flyspell
-  :config
-  (when (eq system-type 'windows-nt)
-    (add-to-list 'exec-path "C:/Program Files (x86)/Aspell/bin/"))
-  (setq ispell-program-name "aspell" ; use aspell instead of ispell
-        ispell-extra-args '("--sug-mode=ultra"))
-  (add-hook 'text-mode-hook #'flyspell-mode)
-  (add-hook 'prog-mode-hook #'flyspell-prog-mode))
-
-(use-package flycheck
-  :ensure t
-  :config
-  (add-hook 'after-init-hook #'global-flycheck-mode))
-
-(use-package super-save
-  :ensure t
-  :config
-  (super-save-mode +1))
 
 (use-package crux
   :ensure t
   :bind (("C-c o" . crux-open-with)
          ("M-o" . crux-smart-open-line)
          ("C-c n" . crux-cleanup-buffer-or-region)
-         ("C-c f" . crux-recentf-ido-find-file)
+         ("C-c f" . crux-recentf-find-file)
          ("C-M-z" . crux-indent-defun)
          ("C-c u" . crux-view-url)
          ("C-c e" . crux-eval-and-replace)
@@ -470,7 +363,7 @@ Start `ielm' if it's not already running."
          ("C-c TAB" . crux-indent-rigidly-and-copy-to-clipboard)
          ("C-c I" . crux-find-user-init-file)
          ("C-c S" . crux-find-shell-init-file)
-         ("s-r" . crux-recentf-ido-find-file)
+         ("s-r" . crux-recentf-find-file)
          ("s-j" . crux-top-join-line)
          ("C-^" . crux-top-join-line)
          ("s-k" . crux-kill-whole-line)
@@ -482,22 +375,11 @@ Start `ielm' if it's not already running."
          ([remap kill-whole-line] . crux-kill-whole-line)
          ("C-c s" . crux-ispell-word-then-abbrev)))
 
-(use-package aggressive-indent
+;; temporarily highlight changes from yanking, etc
+(use-package volatile-highlights
   :ensure t
   :config
-  (global-aggressive-indent-mode +1))
-
-(use-package diff-hl
-  :ensure t
-  :config
-  (global-diff-hl-mode +1)
-  (add-hook 'dired-mode-hook 'diff-hl-dired-mode)
-  (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh))
-
-(use-package which-key
-  :ensure t
-  :config
-  (which-key-mode +1))
+  (volatile-highlights-mode +1))
 
 (use-package undo-tree
   :ensure t
@@ -507,22 +389,63 @@ Start `ielm' if it's not already running."
         `((".*" . ,temporary-file-directory)))
   (setq undo-tree-auto-save-history t))
 
-(when (eq system-type 'windows-nt)
-  (setq w32-pass-lwindow-to-system nil)
-  (setq w32-lwindow-modifier 'super) ; Left Windows key
+(use-package diff-hl
+  :ensure t
+  :config
+  (global-diff-hl-mode +1)
+  (add-hook 'dired-mode-hook 'diff-hl-dired-mode)
+  (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh))
 
-  (setq w32-pass-rwindow-to-system nil)
-  (setq w32-rwindow-modifier 'super) ; Right Windows key
+(use-package super-save
+  :ensure t
+  :config
+  ;; add integration with ace-window
+  (add-to-list 'super-save-triggers 'ace-window)
+  (super-save-mode +1))
 
-  (setq w32-pass-apps-to-system nil)
-  (setq w32-apps-modifier 'hyper) ; Menu/App key
+(use-package imenu-anywhere
+  :ensure t
+  :bind (("C-c i" . imenu-anywhere)
+         ("s-i" . imenu-anywhere)))
 
-  (set-frame-font "Source Code Pro 12")
-  (add-to-list 'exec-path "C:/Program Files/Git/bin")
-  (add-to-list 'exec-path "C:/Program Files/Git/mingw64/bin")
-  (setenv "PATH" (concat "C:/Program Files/Git/bin;" "C:/Program Files/Git/mingw64/bin;" (getenv "PATH")))
-  ;; needed for arc-mode
-  (add-to-list 'exec-path "C:/Program Files/7-Zip"))
+(use-package hl-todo
+  :ensure t
+  :config
+  (setq hl-todo-highlight-punctuation ":")
+  (global-hl-todo-mode))
+
+(use-package markdown-mode
+  :ensure t
+  :mode (("\\.md\\'" . gfm-mode)
+         ("\\.markdown\\'" . gfm-mode))
+  :config
+  (setq markdown-fontify-code-blocks-natively t))
+
+(use-package adoc-mode
+  :ensure t
+  :mode "\\.adoc\\'")
+
+(use-package move-text
+  :ensure t
+  :bind
+  (([(meta shift up)] . move-text-up)
+   ([(meta shift down)] . move-text-down)))
+
+(use-package clojure-mode
+  :ensure t
+  :config
+  (add-hook 'clojure-mode-hook #'paredit-mode)
+  (add-hook 'clojure-mode-hook #'subword-mode)
+  (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
+
+(use-package cider
+  :ensure t
+  :config
+  (setq nrepl-log-messages t)
+  (add-hook 'cider-mode-hook #'eldoc-mode)
+  (add-hook 'cider-repl-mode-hook #'eldoc-mode)
+  (add-hook 'cider-repl-mode-hook #'paredit-mode)
+  (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -531,21 +454,10 @@ Start `ielm' if it's not already running."
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (elixir-mode cask-mode buttercup rainbow-mode ztree zop-to-char zenburn-theme yasnippet yaml-mode which-key use-package super-save smex rainbow-delimiters pt projectile paredit noflet multiple-cursors move-text markdown-mode magit inflections inf-ruby inf-clojure imenu-anywhere ido-ubiquitous hydra flycheck flx-ido expand-region exec-path-from-shell evil erlang elisp-slime-nav edn easy-kill crux company cider avy anzu aggressive-indent ag)))
- '(safe-local-variable-values
-   (quote
-    ((checkdoc-package-keywords-flag)
-     (eval when
-           (require
-            (quote rainbow-mode)
-            nil t)
-           (rainbow-mode 1))
-     (bug-reference-bug-regexp . "#\\(?2:[[:digit:]]+\\)")))))
+    (cider clojure-mode paredit elisp-slime-nav move-text adoc-mode markdown-mode hl-todo imenu-anywhere super-save diff-hl undo-tree volatile-highlights crux company yaml-mode exec-path-from-shell easy-kill anzu git-timemachine expand-region ace-window spacemacs-theme flx projectile ag try counsel which-key magit zenburn-theme aggressive-indent rainbow-delimiters rainbow-identifiers use-package))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
-
-;;; init.el ends here
