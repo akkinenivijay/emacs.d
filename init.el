@@ -447,6 +447,17 @@ Start `ielm' if it's not already running."
   (add-hook 'cider-repl-mode-hook #'paredit-mode)
   (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode))
 
+(use-package elixir-mode
+  :ensure t
+  :config
+  (add-hook 'elixir-mode #'subword-mode))
+
+(use-package alchemist
+  :ensure t
+  :config
+  (setq alchemist-mix-command "/usr/local/bin/mix")
+  (setq alchemist-execute-command "/usr/local/bin/elixir"))
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
