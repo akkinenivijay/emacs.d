@@ -4,7 +4,7 @@
        (proto (if no-ssl "http" "https")))
   ;; Comment/uncomment these two lines to enable/disable MELPA and MELPA Stable as desired
   (add-to-list 'package-archives (cons "melpa" (concat proto "://melpa.org/packages/")) t)
-  ;;(add-to-list 'package-archives (cons "melpa-stable" (concat proto "://stable.melpa.org/packages/")) t)
+  (add-to-list 'package-archives (cons "melpa-stable" (concat proto "://stable.melpa.org/packages/")) t)
   (when (< emacs-major-version 24)
     ;; For important compatibility libraries like cl-lib
     (add-to-list 'package-archives (cons "gnu" (concat proto "://elpa.gnu.org/packages/")))))
@@ -160,9 +160,6 @@ Start `ielm' if it's not already running."
   (progn
     (global-aggressive-indent-mode 1)))
 
-(use-package ag
-  :ensure t)
-
 (use-package spacemacs-theme
   :defer t
   :init (load-theme 'spacemacs-dark t))
@@ -183,6 +180,9 @@ Start `ielm' if it's not already running."
   :ensure t
   :config
   (which-key-mode +1))
+
+(use-package ag
+  :ensure t)
 
 (use-package flx
   :ensure t)
@@ -216,9 +216,9 @@ Start `ielm' if it's not already running."
   (global-set-key (kbd "<f1> l") 'counsel-find-library)
   (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
   (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
+  (global-set-key (kbd "C-c C-g") 'counsel-ag)
   (global-set-key (kbd "C-c g") 'counsel-git)
   (global-set-key (kbd "C-c j") 'counsel-git-grep)
-  (global-set-key (kbd "C-c a") 'counsel-ag)
   (global-set-key (kbd "C-x l") 'counsel-locate)
   (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history))
 
@@ -344,6 +344,7 @@ Start `ielm' if it's not already running."
   ;; invert the navigation direction if the the completion popup-isearch-match
   ;; is displayed on top (happens near the bottom of windows)
   (setq company-tooltip-flip-when-above t)
+  (add-to-list 'company-backends 'merlin-company-backend)
   (global-company-mode))
 
 (use-package crux
@@ -456,7 +457,76 @@ Start `ielm' if it's not already running."
   :ensure t
   :config
   (setq alchemist-mix-command "/usr/local/bin/mix")
-  (setq alchemist-execute-command "/usr/local/bin/elixir"))
+  (setq alchemist-execute-command "/usr/local/bin/elixir")
+  (setq alchemist-iex-program-name "/usr/local/bin/iex")
+  (setq alchemist-execute-command "/usr/local/bin/elixir")
+  (setq alchemist-compile-command "/usr/local/bin/elixirc")
+  (setq alchemist-hooks-compile-on-save t))
+
+(use-package flycheck-joker
+  :ensure t
+  :pin melpa-stable)
+
+(use-package flycheck
+  :ensure t
+  :pin melpa-stable
+  :config
+  (add-hook 'after-init-hook #'global-flycheck-mode))
+
+(use-package haskell-mode
+  :ensure t
+  :config
+  (add-hook 'haskell-mode-hook 'turn-on-haskell-doc-mode)
+  (add-hook 'haskell-mode-hook 'turn-on-haskell-indentation))
+
+(use-package intero
+  :ensure t
+  :config
+  (add-hook 'haskell-mode-hook 'intero-mode))
+
+(use-package utop
+  :ensure t)
+
+(use-package ocp-indent
+  :ensure t)
+
+(use-package merlin
+  :ensure t
+  :config
+  (add-hook 'caml-mode-hook 'merlin-mode t)
+  (add-hook 'merlin-mode-hook 'company-mode)
+  (setq merlin-use-auto-complete-mode t)
+  (setq merlin-error-after-save nil))
+
+(use-package tuareg
+  :ensure
+  :config
+  (setq tuareg-font-lock-symbols t)
+  ;; Indent `=' like a standard keyword.
+  (setq tuareg-lazy-= t)
+  ;; Indent [({ like standard keywords.
+  (setq tuareg-lazy-paren t)
+  ;; No indentation after `in' keywords.
+  (setq tuareg-in-indent 0)
+  (add-hook 'tuareg-mode-hook
+    ;; Turn on auto-fill minor mode.
+    (lambda ()
+      (when (functionp 'prettify-symbols-mode)
+                (prettify-symbols-mode))
+      (auto-fill-mode 1)
+      (setq mode-name "🐫")
+      (add-hook 'before-save-hook 'ocp-indent-buffer (merlin-mode))))
+  (face-spec-set
+   'tuareg-font-lock-constructor-face
+   '((((class color) (background light)) (:foreground "SaddleBrown"))
+     (((class color) (background dark)) (:foreground "burlywood1"))))
+  ;;(add-hook 'tuareg-mode-hook #'(lambda() (setq mode-name "🐫")))
+  (setq auto-mode-alist
+        (append '(("\\.ml[ily]?$" . tuareg-mode)
+                  ("\\.topml$" . tuareg-mode))
+                auto-mode-alist))
+  (add-hook 'tuareg-mode-hook 'utop-minor-mode)
+  (add-hook 'tuareg-mode-hook 'merlin-mode))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -465,10 +535,13 @@ Start `ielm' if it's not already running."
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (cider clojure-mode paredit elisp-slime-nav move-text adoc-mode markdown-mode hl-todo imenu-anywhere super-save diff-hl undo-tree volatile-highlights crux company yaml-mode exec-path-from-shell easy-kill anzu git-timemachine expand-region ace-window spacemacs-theme flx projectile ag try counsel which-key magit zenburn-theme aggressive-indent rainbow-delimiters rainbow-identifiers use-package))))
+    (flycheck flycheck-joker intero haskell-mode cider clojure-mode paredit elisp-slime-nav move-text adoc-mode markdown-mode hl-todo imenu-anywhere super-save diff-hl undo-tree volatile-highlights crux company yaml-mode exec-path-from-shell easy-kill anzu git-timemachine expand-region ace-window spacemacs-theme flx projectile ag try counsel which-key magit zenburn-theme aggressive-indent rainbow-delimiters rainbow-identifiers use-package))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+;; ## added by OPAM user-setup for emacs / base ## 56ab50dc8996d2bb95e7856a6eddb17b ## you can edit, but keep this line
+(require 'opam-user-setup "~/.emacs.d/opam-user-setup.el")
+;; ## end of OPAM user-setup addition for emacs / base ## keep this line
