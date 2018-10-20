@@ -495,27 +495,21 @@ Start `ielm' if it's not already running."
   :config
   (add-hook 'caml-mode-hook 'merlin-mode t)
   (add-hook 'merlin-mode-hook 'company-mode)
-  (setq merlin-use-auto-complete-mode t)
+  (setq merlin-command 'opam)
   (setq merlin-error-after-save nil))
 
 (use-package tuareg
   :ensure
   :config
-  (setq tuareg-font-lock-symbols t)
-  ;; Indent `=' like a standard keyword.
-  (setq tuareg-lazy-= t)
-  ;; Indent [({ like standard keywords.
-  (setq tuareg-lazy-paren t)
-  ;; No indentation after `in' keywords.
   (setq tuareg-in-indent 0)
   (add-hook 'tuareg-mode-hook
-    ;; Turn on auto-fill minor mode.
-    (lambda ()
-      (when (functionp 'prettify-symbols-mode)
+            ;; Turn on auto-fill minor mode.
+            (lambda ()
+              (when (functionp 'prettify-symbols-mode)
                 (prettify-symbols-mode))
-      (auto-fill-mode 1)
-      (setq mode-name "🐫")
-      (add-hook 'before-save-hook 'ocp-indent-buffer (merlin-mode))))
+              (auto-fill-mode 1)
+              (setq mode-name "🐫")
+              (add-hook 'before-save-hook 'ocp-indent-buffer (merlin-mode))))
   (face-spec-set
    'tuareg-font-lock-constructor-face
    '((((class color) (background light)) (:foreground "SaddleBrown"))
