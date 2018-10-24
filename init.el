@@ -483,23 +483,20 @@ Start `ielm' if it's not already running."
   :config
   (add-hook 'haskell-mode-hook 'intero-mode))
 
-(use-package utop)
+(use-package utop
+  :config
+  (setq utop-command "opam config exec -- utop -emacs"))
 
 (use-package ocp-indent)
 
-(use-package merlin
-  :config
-  (add-hook 'caml-mode-hook 'merlin-mode t)
-  (add-hook 'merlin-mode-hook 'company-mode)
-  (setq merlin-command 'opam))
-
 (use-package tuareg
   :init
+  (setq tuareg-indent-align-with-first-arg t)
   (setq auto-mode-alist
-        (append '(("\\.ml[ily]?$" . tuareg-mode)
-                  ("\\.topml$" . tuareg-mode))
-                auto-mode-alist))
-  (setq tuareg-in-indent 0)
+      (append '(("_oasis\\'" . conf-mode)
+    ("_tags\\'" . conf-mode)
+    ("_log\\'" . conf-mode))
+        auto-mode-alist))
   :config
   (add-hook 'tuareg-mode-hook
             ;; Turn on auto-fill minor mode.
@@ -508,12 +505,16 @@ Start `ielm' if it's not already running."
                 (prettify-symbols-mode))
               (auto-fill-mode 1)
               (add-hook 'before-save-hook 'ocp-indent-buffer (merlin-mode))))
-  (face-spec-set
-   'tuareg-font-lock-constructor-face
-   '((((class color) (background light)) (:foreground "SaddleBrown"))
-     (((class color) (background dark)) (:foreground "burlywood1"))))
   (add-hook 'tuareg-mode-hook 'utop-minor-mode)
   (add-hook 'tuareg-mode-hook 'merlin-mode))
+
+(use-package merlin
+  :after tuareg
+  :init
+  (add-to-list 'auto-mode-alist '("/\\.merlin\\'" . conf-mode))
+  :config
+  (add-hook 'caml-mode-hook 'merlin-mode t)
+  (add-hook 'merlin-mode-hook 'company-mode))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
