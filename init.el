@@ -507,7 +507,6 @@ Start `ielm' if it's not already running."
               (when (functionp 'prettify-symbols-mode)
                 (prettify-symbols-mode))
               (auto-fill-mode 1)
-              (setq mode-name "tuareg")
               (add-hook 'before-save-hook 'ocp-indent-buffer (merlin-mode))))
   (face-spec-set
    'tuareg-font-lock-constructor-face
