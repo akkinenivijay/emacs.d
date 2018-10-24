@@ -311,9 +311,7 @@ Start `ielm' if it's not already running."
   (global-anzu-mode +1))
 
 (use-package easy-kill
-  :ensure t
-  :config
-  (global-set-key [remap kill-ring-save] 'easy-kill))
+  :bind (([remap kill-ring-save] . easy-kill)))
 
 (use-package exec-path-from-shell
   :ensure t
@@ -329,6 +327,16 @@ Start `ielm' if it's not already running."
   :config
   (setq whitespace-line-column 80) ;; limit line length
   (setq whitespace-style '(face tabs empty trailing lines-tail)))
+
+(use-package flycheck-joker
+  :ensure t
+  :pin melpa-stable)
+
+(use-package flycheck
+  :ensure t
+  :pin melpa-stable
+  :config
+  (add-hook 'after-init-hook #'global-flycheck-mode))
 
 (use-package yaml-mode
   :ensure t)
@@ -433,6 +441,7 @@ Start `ielm' if it's not already running."
    ([(meta shift down)] . move-text-down)))
 
 (use-package clojure-mode
+  :mode "\\.clj\\'"
   :ensure t
   :config
   (add-hook 'clojure-mode-hook #'paredit-mode)
@@ -440,7 +449,7 @@ Start `ielm' if it's not already running."
   (add-hook 'clojure-mode-hook #'rainbow-delimiters-mode))
 
 (use-package cider
-  :ensure t
+  :after clojure-mode
   :config
   (setq nrepl-log-messages t)
   (add-hook 'cider-mode-hook #'eldoc-mode)
@@ -449,12 +458,12 @@ Start `ielm' if it's not already running."
   (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode))
 
 (use-package elixir-mode
-  :ensure t
+  :mode ("\\.exs\\'" "\\.ex\\'")
   :config
   (add-hook 'elixir-mode #'subword-mode))
 
 (use-package alchemist
-  :ensure t
+  :after elixir-mode
   :config
   (setq alchemist-mix-command "/usr/local/bin/mix")
   (setq alchemist-execute-command "/usr/local/bin/elixir")
@@ -463,62 +472,47 @@ Start `ielm' if it's not already running."
   (setq alchemist-compile-command "/usr/local/bin/elixirc")
   (setq alchemist-hooks-compile-on-save t))
 
-(use-package flycheck-joker
-  :ensure t
-  :pin melpa-stable)
-
-(use-package flycheck
-  :ensure t
-  :pin melpa-stable
-  :config
-  (add-hook 'after-init-hook #'global-flycheck-mode))
-
 (use-package haskell-mode
-  :ensure t
+  :mode ("\\.lhs\\'" "\\.hs\\'")
   :config
   (add-hook 'haskell-mode-hook 'turn-on-haskell-doc-mode)
   (add-hook 'haskell-mode-hook 'turn-on-haskell-indentation))
 
 (use-package intero
-  :ensure t
+  :after haskell-mode
   :config
   (add-hook 'haskell-mode-hook 'intero-mode))
 
-(use-package utop
-  :ensure t)
+(use-package utop)
 
-(use-package ocp-indent
-  :ensure t)
+(use-package ocp-indent)
 
 (use-package merlin
-  :ensure t
   :config
   (add-hook 'caml-mode-hook 'merlin-mode t)
   (add-hook 'merlin-mode-hook 'company-mode)
-  (setq merlin-command 'opam)
-  (setq merlin-error-after-save nil))
+  (setq merlin-command 'opam))
 
 (use-package tuareg
-  :ensure
-  :config
+  :init
+  (setq auto-mode-alist
+        (append '(("\\.ml[ily]?$" . tuareg-mode)
+                  ("\\.topml$" . tuareg-mode))
+                auto-mode-alist))
   (setq tuareg-in-indent 0)
+  :config
   (add-hook 'tuareg-mode-hook
             ;; Turn on auto-fill minor mode.
             (lambda ()
               (when (functionp 'prettify-symbols-mode)
                 (prettify-symbols-mode))
               (auto-fill-mode 1)
-              (setq mode-name "🐫")
+              (setq mode-name "tuareg")
               (add-hook 'before-save-hook 'ocp-indent-buffer (merlin-mode))))
   (face-spec-set
    'tuareg-font-lock-constructor-face
    '((((class color) (background light)) (:foreground "SaddleBrown"))
      (((class color) (background dark)) (:foreground "burlywood1"))))
-  ;;(add-hook 'tuareg-mode-hook #'(lambda() (setq mode-name "🐫")))
-  (setq auto-mode-alist
-        (append '(("\\.ml[ily]?$" . tuareg-mode)
-                  ("\\.topml$" . tuareg-mode))
-                auto-mode-alist))
   (add-hook 'tuareg-mode-hook 'utop-minor-mode)
   (add-hook 'tuareg-mode-hook 'merlin-mode))
 
