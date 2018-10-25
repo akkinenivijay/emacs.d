@@ -475,8 +475,18 @@ Start `ielm' if it's not already running."
 (use-package haskell-mode
   :mode ("\\.lhs\\'" "\\.hs\\'")
   :config
-  (add-hook 'haskell-mode-hook 'turn-on-haskell-doc-mode)
-  (add-hook 'haskell-mode-hook 'turn-on-haskell-indentation))
+  (add-hook 'haskell-mode-hook
+            (lambda ()
+              (set (make-local-variable 'company-backends)
+                   (append '((company-capf company-dabbrev-code))
+                           company-backends))))
+  (add-hook 'haskell-mode-hook 'turn-on-haskell-unicode-input-method)
+  (add-hook 'haskell-mode-hook 'turn-on-haskell-doc-mode))
+
+(use-package hindent
+  :after haskell-mode
+  :config
+  (add-hook 'haskell-mode-hook #'hindent-mode))
 
 (use-package intero
   :after haskell-mode
