@@ -111,7 +111,7 @@
 
 (use-package lisp-mode
   :config
-  (defun bozhidar-visit-ielm ()
+  (defun vijay-visit-ielm ()
     "Switch to default `ielm' buffer.
 Start `ielm' if it's not already running."
     (interactive)
@@ -119,7 +119,7 @@ Start `ielm' if it's not already running."
 
   (add-hook 'emacs-lisp-mode-hook #'eldoc-mode)
   (add-hook 'emacs-lisp-mode-hook #'rainbow-delimiters-mode)
-  (define-key emacs-lisp-mode-map (kbd "C-c C-z") #'bozhidar-visit-ielm)
+  (define-key emacs-lisp-mode-map (kbd "C-c C-z") #'vijay-visit-ielm)
   (define-key emacs-lisp-mode-map (kbd "C-c C-c") #'eval-defun)
   (define-key emacs-lisp-mode-map (kbd "C-c C-b") #'eval-buffer)
   (add-hook 'lisp-interaction-mode-hook #'eldoc-mode)
@@ -220,40 +220,61 @@ Start `ielm' if it's not already running."
 (use-package flx
   :ensure t)
 
+(use-package smex)
+
 (use-package ivy
   :ensure t
-  :config
+  :init
   (ivy-mode 1)
+  (setq ivy-height 30)
   (setq ivy-use-virtual-buffers t)
-  ;; use flx matching instead of the default
-  ;; see https://oremacs.com/2016/01/06/ivy-flx/ for details
-  (setq ivy-re-builders-alist
-        '((t . ivy--regex-fuzzy)))
-  (setq ivy-initial-inputs-alist nil)
-  (setq enable-recursive-minibuffers t)
-  (global-set-key (kbd "C-c C-r") 'ivy-resume)
-  (global-set-key (kbd "<f6>") 'ivy-resume))
+  (defun swiper-at-point ()
+    (interactive)
+    (swiper (thing-at-point 'word)))
+  :bind (("C-x b"   . ivy-switch-buffer)
+         ("C-c C-r" . ivy-resume)
+         ("C-c s"   . swiper-at-point)
+         ("C-s"     . swiper))
+  :diminish)
 
-(use-package swiper
-  :ensure t
-  :config
-  (global-set-key "\C-s" 'swiper))
+(use-package ivy-rich
+  :after counsel
+  :custom
+  (ivy-virtual-abbreviate 'full
+   ivy-rich-switch-buffer-align-virtual-buffer t
+   ivy-rich-path-style 'abbrev)
+  :init
+  (ivy-rich-mode))
 
 (use-package counsel
   :ensure t
+  :after ivy
   :config
-  (global-set-key (kbd "M-x") 'counsel-M-x)
-  (global-set-key (kbd "C-x C-f") 'counsel-find-file)
-  (global-set-key (kbd "<f1> f") 'counsel-describe-function)
-  (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
-  (global-set-key (kbd "<f1> l") 'counsel-find-library)
-  (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
-  (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
-  (global-set-key (kbd "C-c C-g") 'counsel-ag)
-  (global-set-key (kbd "C-c g") 'counsel-git)
-  (global-set-key (kbd "C-c j") 'counsel-git-grep)
-  (global-set-key (kbd "C-x l") 'counsel-locate)
-  (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history))
+  (counsel-mode 1)
+  (defun counsel-rg-at-point ()
+    (interactive)
+    (let ((selection (thing-at-point 'word)))
+      (if (<= 4 (length selection))
+          (counsel-rg selection)
+        (counsel-rg))))
+  :bind
+  (("M-x" . counsel-M-x)
+   ("<f1> f" . counsel-describe-function)
+   ("<f1> v" . counsel-describe-variable)
+   ("<f1> l" . counsel-find-library)
+   ("<f2> u" . counsel-unicode-char)
+   ("C-c h" . counsel-rg)
+   ("C-c H" . counsel-rg-at-point)
+   ("C-c i" . counsel-imenu)
+   ("C-c C-g" . counsel-ag)
+   ("C-c g" . counsel-git)
+   ("C-c j" . counsel-git-grep)
+   ("C-x l" . counsel-locate)
+   ("C-x C-f" . counsel-find-file)
+   ("C-c y" . counsel-yank-pop)
+   :map ivy-minibuffer-map
+   ("C-r" . counsel-minibuffer-history))
+  :diminish)
 
 (use-package projectile
   :ensure t
@@ -582,7 +603,7 @@ Start `ielm' if it's not already running."
  '(jdee-db-spec-breakpoint-face-colors (cons "#1B2229" "#3f444a"))
  '(package-selected-packages
    (quote
-    (dimmer doom-modeline doom-themes flycheck flycheck-joker intero haskell-mode cider clojure-mode paredit elisp-slime-nav move-text adoc-mode markdown-mode hl-todo imenu-anywhere super-save diff-hl undo-tree volatile-highlights crux company yaml-mode exec-path-from-shell easy-kill anzu git-timemachine expand-region ace-window spacemacs-theme flx projectile ag try counsel which-key magit zenburn-theme aggressive-indent rainbow-delimiters rainbow-identifiers use-package)))
+    (ivy-rich smex dimmer doom-modeline doom-themes flycheck flycheck-joker intero haskell-mode cider clojure-mode paredit elisp-slime-nav move-text adoc-mode markdown-mode hl-todo imenu-anywhere super-save diff-hl undo-tree volatile-highlights crux company yaml-mode exec-path-from-shell easy-kill anzu git-timemachine expand-region ace-window spacemacs-theme flx projectile ag try counsel which-key magit zenburn-theme aggressive-indent rainbow-delimiters rainbow-identifiers use-package)))
  '(vc-annotate-background "#282c34")
  '(vc-annotate-color-map
    (list
