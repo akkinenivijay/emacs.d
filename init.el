@@ -2,12 +2,21 @@
 (let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
                     (not (gnutls-available-p))))
        (proto (if no-ssl "http" "https")))
-  ;; Comment/uncomment these two lines to enable/disable MELPA and MELPA Stable as desired
-  (add-to-list 'package-archives (cons "melpa" (concat proto "://melpa.org/packages/")) t)
-  (add-to-list 'package-archives (cons "melpa-stable" (concat proto "://stable.melpa.org/packages/")) t)
+  ;; Comment/uncomment these two lines to enable/disable MELPA
+  ;; and MELPA Stable as desired
+  (add-to-list 'package-archives
+               (cons "melpa"
+                     (concat proto "://melpa.org/packages/"))
+               t)
+  (add-to-list 'package-archives
+               (cons "melpa-stable"
+                     (concat proto "://stable.melpa.org/packages/"))
+               t)
   (when (< emacs-major-version 24)
     ;; For important compatibility libraries like cl-lib
-    (add-to-list 'package-archives (cons "gnu" (concat proto "://elpa.gnu.org/packages/")))))
+    (add-to-list 'package-archives
+                 (cons "gnu"
+                       (concat proto "://elpa.gnu.org/packages/")))))
 (package-initialize)
 
 (unless package-archive-contents
@@ -26,7 +35,8 @@
 ;; warn when opening files bigger than 100MB
 (setq large-file-warning-threshold 100000000)
 
-(defconst akkineni-savefile-dir (expand-file-name "savefile" user-emacs-directory))
+(defconst akkineni-savefile-dir (expand-file-name "savefile"
+                                                  user-emacs-directory))
 
 ;; create the savefile dir if it doesn't exist
 (unless (file-exists-p akkineni-savefile-dir)
@@ -160,9 +170,27 @@ Start `ielm' if it's not already running."
   (progn
     (global-aggressive-indent-mode 1)))
 
-(use-package spacemacs-theme
-  :defer t
-  :init (load-theme 'spacemacs-dark t))
+(use-package doom-themes
+  :ensure t
+  :config
+  (load-theme 'doom-one t))
+
+; (use-package doom-modeline
+;   :init
+;   (setq doom-modeline-height 22)
+;   (doom-modeline-init)
+;   (doom-modeline-def-modeline
+;    'vijay
+;    '(window-number
+;      bar
+;      matches
+;      " "
+;      buffer-info
+;      buffer-position
+;      " "
+;      selection-info)
+;    '(global buffer-encoding major-mode process vcs flycheck))
+;   (doom-modeline-set-modeline 'vijay t))
 
 (use-package magit
   :ensure t
@@ -180,6 +208,11 @@ Start `ielm' if it's not already running."
   :ensure t
   :config
   (which-key-mode +1))
+
+(use-package dimmer
+  :config
+  (setq dimmer-fraction 0.15)
+  (dimmer-mode))
 
 (use-package ag
   :ensure t)
@@ -316,8 +349,7 @@ Start `ielm' if it's not already running."
 (use-package exec-path-from-shell
   :ensure t
   :config
-  (when (memq window-system '(mac ns))
-    (exec-path-from-shell-initialize)))
+  (exec-path-from-shell-initialize))
 
 (use-package whitespace
   :init
@@ -452,10 +484,18 @@ Start `ielm' if it's not already running."
   :after clojure-mode
   :config
   (setq nrepl-log-messages t)
+  (setq cider-repl-use-pretty-printing t)
+  (setq cider-repl-wrap-history t)
+  (setq cider-repl-history-size 1000)
   (add-hook 'cider-mode-hook #'eldoc-mode)
   (add-hook 'cider-repl-mode-hook #'eldoc-mode)
   (add-hook 'cider-repl-mode-hook #'paredit-mode)
   (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode))
+
+(use-package clj-refactor
+  :after clojure-mode
+  :config
+  (cljr-add-keybindings-with-prefix "C-c C-r"))
 
 (use-package elixir-mode
   :mode ("\\.exs\\'" "\\.ex\\'")
@@ -475,11 +515,11 @@ Start `ielm' if it's not already running."
 (use-package haskell-mode
   :mode ("\\.lhs\\'" "\\.hs\\'")
   :config
-  (add-hook 'haskell-mode-hook
-            (lambda ()
-              (set (make-local-variable 'company-backends)
-                   (append '((company-capf company-dabbrev-code))
-                           company-backends))))
+  ; (add-hook 'haskell-mode-hook
+  ;           (lambda ()
+  ;             (set (make-local-variable 'company-backends)
+  ;                  (append '((company-capf company-dabbrev-code))
+  ;                          company-backends))))
   (add-hook 'haskell-mode-hook 'turn-on-haskell-unicode-input-method)
   (add-hook 'haskell-mode-hook 'turn-on-haskell-doc-mode))
 
@@ -531,9 +571,40 @@ Start `ielm' if it's not already running."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(ansi-color-names-vector
+   ["#1B2229" "#ff6c6b" "#98be65" "#ECBE7B" "#51afef" "#c678dd" "#46D9FF" "#DFDFDF"])
+ '(custom-safe-themes
+   (quote
+    ("6b2636879127bf6124ce541b1b2824800afc49c6ccd65439d6eb987dbf200c36" "1c082c9b84449e54af757bcae23617d11f563fc9f33a832a8a2813c4d7dfb652" default)))
+ '(fci-rule-color "#5B6268")
+ '(jdee-db-active-breakpoint-face-colors (cons "#1B2229" "#51afef"))
+ '(jdee-db-requested-breakpoint-face-colors (cons "#1B2229" "#98be65"))
+ '(jdee-db-spec-breakpoint-face-colors (cons "#1B2229" "#3f444a"))
  '(package-selected-packages
    (quote
-    (flycheck flycheck-joker intero haskell-mode cider clojure-mode paredit elisp-slime-nav move-text adoc-mode markdown-mode hl-todo imenu-anywhere super-save diff-hl undo-tree volatile-highlights crux company yaml-mode exec-path-from-shell easy-kill anzu git-timemachine expand-region ace-window spacemacs-theme flx projectile ag try counsel which-key magit zenburn-theme aggressive-indent rainbow-delimiters rainbow-identifiers use-package))))
+    (dimmer doom-modeline doom-themes flycheck flycheck-joker intero haskell-mode cider clojure-mode paredit elisp-slime-nav move-text adoc-mode markdown-mode hl-todo imenu-anywhere super-save diff-hl undo-tree volatile-highlights crux company yaml-mode exec-path-from-shell easy-kill anzu git-timemachine expand-region ace-window spacemacs-theme flx projectile ag try counsel which-key magit zenburn-theme aggressive-indent rainbow-delimiters rainbow-identifiers use-package)))
+ '(vc-annotate-background "#282c34")
+ '(vc-annotate-color-map
+   (list
+    (cons 20 "#98be65")
+    (cons 40 "#b4be6c")
+    (cons 60 "#d0be73")
+    (cons 80 "#ECBE7B")
+    (cons 100 "#e6ab6a")
+    (cons 120 "#e09859")
+    (cons 140 "#da8548")
+    (cons 160 "#d38079")
+    (cons 180 "#cc7cab")
+    (cons 200 "#c678dd")
+    (cons 220 "#d974b7")
+    (cons 240 "#ec7091")
+    (cons 260 "#ff6c6b")
+    (cons 280 "#cf6162")
+    (cons 300 "#9f585a")
+    (cons 320 "#6f4e52")
+    (cons 340 "#5B6268")
+    (cons 360 "#5B6268")))
+ '(vc-annotate-very-old-color nil))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
