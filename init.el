@@ -284,6 +284,10 @@ Start `ielm' if it's not already running."
   (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
   (projectile-mode +1))
 
+(use-package counsel-projectile
+  :config
+  (counsel-projectile-mode))
+
 (use-package ace-window
   :ensure t
   :config
@@ -535,14 +539,10 @@ Start `ielm' if it's not already running."
 
 (use-package haskell-mode
   :mode ("\\.lhs\\'" "\\.hs\\'")
+  :ensure t
   :config
-  ; (add-hook 'haskell-mode-hook
-  ;           (lambda ()
-  ;             (set (make-local-variable 'company-backends)
-  ;                  (append '((company-capf company-dabbrev-code))
-  ;                          company-backends))))
-  (add-hook 'haskell-mode-hook 'turn-on-haskell-unicode-input-method)
-  (add-hook 'haskell-mode-hook 'turn-on-haskell-doc-mode))
+  (add-hook 'haskell-mode-hook 'subword-mode)
+  (add-hook 'haskell-mode-hook 'eldoc-mode))
 
 (use-package hindent
   :after haskell-mode
@@ -552,6 +552,7 @@ Start `ielm' if it's not already running."
 (use-package intero
   :after haskell-mode
   :config
+  (intero-global-mode)
   (add-hook 'haskell-mode-hook 'intero-mode))
 
 (use-package utop
@@ -603,7 +604,7 @@ Start `ielm' if it's not already running."
  '(jdee-db-spec-breakpoint-face-colors (cons "#1B2229" "#3f444a"))
  '(package-selected-packages
    (quote
-    (ivy-rich smex dimmer doom-modeline doom-themes flycheck flycheck-joker intero haskell-mode cider clojure-mode paredit elisp-slime-nav move-text adoc-mode markdown-mode hl-todo imenu-anywhere super-save diff-hl undo-tree volatile-highlights crux company yaml-mode exec-path-from-shell easy-kill anzu git-timemachine expand-region ace-window spacemacs-theme flx projectile ag try counsel which-key magit zenburn-theme aggressive-indent rainbow-delimiters rainbow-identifiers use-package)))
+    (counsel-projectile ivy-rich smex dimmer doom-modeline doom-themes flycheck flycheck-joker intero haskell-mode cider clojure-mode paredit elisp-slime-nav move-text adoc-mode markdown-mode hl-todo imenu-anywhere super-save diff-hl undo-tree volatile-highlights crux company yaml-mode exec-path-from-shell easy-kill anzu git-timemachine expand-region ace-window spacemacs-theme flx projectile ag try counsel which-key magit zenburn-theme aggressive-indent rainbow-delimiters rainbow-identifiers use-package)))
  '(vc-annotate-background "#282c34")
  '(vc-annotate-color-map
    (list
