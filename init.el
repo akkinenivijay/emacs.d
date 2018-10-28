@@ -404,11 +404,10 @@
 
 (use-package whitespace
   :ensure t
-  :init
-  (dolist (hook '(prog-mode-hook text-mode-hook))
-    (add-hook hook #'whitespace-mode))
-  (add-hook 'before-save-hook #'whitespace-cleanup)
   :config
+  (add-hook 'before-save-hook #'whitespace-cleanup)
+  (add-hook 'prog-mode-hook #'whitespace-mode)
+  (add-hook 'text-mode-hook #'whitespace-mode)
   (setq whitespace-line-column 80) ;; limit line length
   (setq whitespace-style '(face tabs empty trailing lines-tail)))
 
@@ -550,15 +549,55 @@
   (add-hook 'haskell-mode-hook 'eldoc-mode))
 
 (use-package hindent
+  :ensure t
   :after haskell-mode
   :config
   (add-hook 'haskell-mode-hook #'hindent-mode))
 
 (use-package intero
+  :ensure t
   :after haskell-mode
   :config
   (intero-global-mode)
   (add-hook 'haskell-mode-hook 'intero-mode))
+
+(use-package org
+  :commands (org-mode)
+  :bind(("C-c l" . org-store-link)
+        ("C-c c" . org-capture)
+        ("C-c a" . org-agenda)
+        ("C-c b" . org-switchb)
+        ("C-c C-w" . org-refile)
+        ("C-c j" . org-clock-goto)
+        ("C-c C-x C-o" . org-clock-out))
+  :config
+  (setq org-directory "~/Documents/Notes/"
+	org-agenda-files '("~/Documents/Notes/")
+	org-mobile-directory "~/Documents/Notes/.mobile"
+	org-mobile-inbox-for-pull  "~/Documents/Notes/todo.org"
+	org-fontify-whole-heading-line t
+	org-fontify-done-headline t
+	org-fontify-quote-and-verse-blocks t
+	org-src-fontify-natively t
+	org-src-tab-acts-natively t
+	org-src-window-setup 'current-window
+        org-startup-indented t
+	org-confirm-babel-evaluate nil)
+  (org-indent-mode 1)
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '(
+     (python . t)
+     (shell . t)
+     (clojure . t))))
+
+(use-package ox-gfm
+  :ensure t)
+
+(use-package org-bullets
+  :ensure t
+  :commands (org-bullets-mode)
+  :init (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -567,7 +606,7 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (flymake-hlint flymake-easy hlint-refactor haskell-snippets exec-path-from-shell use-package))))
+    (ox-gfm ox-html ox-md flymake-hlint flymake-easy hlint-refactor haskell-snippets exec-path-from-shell use-package))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
