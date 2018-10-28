@@ -5,10 +5,6 @@
   ;; Comment/uncomment these two lines to enable/disable MELPA
   ;; and MELPA Stable as desired
   (add-to-list 'package-archives
-               (cons "melpa"
-                     (concat proto "://melpa.org/packages/"))
-               t)
-  (add-to-list 'package-archives
                (cons "melpa-stable"
                      (concat proto "://stable.melpa.org/packages/"))
                t)
@@ -29,8 +25,8 @@
 (setq gc-cons-threshold 50000000)
 
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
-(add-to-list 'default-frame-alist '(font . "Hack-16"))
-(set-face-attribute 'default t :font  "Hack-16")
+(add-to-list 'default-frame-alist '(font . "Fira Code Retina-16"))
+(set-face-attribute 'default t :font  "Fira Code Retina-16")
 
 ;; warn when opening files bigger than 100MB
 (setq large-file-warning-threshold 100000000)
@@ -92,6 +88,8 @@
 
 (define-key 'help-command (kbd "C-i") #'info-display-manual)
 
+(global-hl-line-mode +1)
+
 ;; misc useful keybindings
 (global-set-key (kbd "s-<") #'beginning-of-buffer)
 (global-set-key (kbd "s->") #'end-of-buffer)
@@ -107,34 +105,48 @@
 (require 'use-package)
 (setq use-package-verbose t)
 
-(global-hl-line-mode +1)
+(setq save-abbrevs 'silent)
+(setq-default abbrev-mode t)
 
-(use-package lisp-mode
-  :config
-  (defun vijay-visit-ielm ()
-    "Switch to default `ielm' buffer.
-Start `ielm' if it's not already running."
-    (interactive)
-    (crux-start-or-switch-to 'ielm "*ielm*"))
+(require 'uniquify)
+(setq uniquify-buffer-name-style 'forward)
+(setq uniquify-separator "/")
+(setq uniquify-after-kill-buffer-p t)    ; rename after killing uniquified
+(setq uniquify-ignore-buffers-re "^\\*")
 
-  (add-hook 'emacs-lisp-mode-hook #'eldoc-mode)
-  (add-hook 'emacs-lisp-mode-hook #'rainbow-delimiters-mode)
-  (define-key emacs-lisp-mode-map (kbd "C-c C-z") #'vijay-visit-ielm)
-  (define-key emacs-lisp-mode-map (kbd "C-c C-c") #'eval-defun)
-  (define-key emacs-lisp-mode-map (kbd "C-c C-b") #'eval-buffer)
-  (add-hook 'lisp-interaction-mode-hook #'eldoc-mode)
-  (add-hook 'eval-expression-minibuffer-setup-hook #'eldoc-mode))
+(put 'dired-find-alternate-file 'disabled nil)
 
-(use-package ielm
-  :config
-  (add-hook 'ielm-mode-hook #'eldoc-mode)
-  (add-hook 'ielm-mode-hook #'rainbow-delimiters-mode))
+;; always delete and copy recursively
+(setq dired-recursive-deletes 'always)
+(setq dired-recursive-copies 'always)
 
-(use-package elisp-slime-nav
+;; if there is a dired buffer displayed in the next window, use its
+;; current subdir, instead of the current subdir of this dired buffer
+(setq dired-dwim-target t)
+
+(add-hook 'dired-load-hook
+          (lambda ()
+            (load "dired-x")
+            ;; Set dired-x global variables here.  For example:
+            ;; (setq dired-guess-shell-gnutar "gtar")
+            ;; (setq dired-x-hands-off-my-keys nil)
+            ))
+(add-hook 'dired-mode-hook
+          (lambda ()
+            ;; Set dired-x buffer-local variables here.  For example:
+            ;; (dired-omit-mode 1)
+            ))
+
+(use-package rainbow-delimiters
   :ensure t
   :config
-  (dolist (hook '(emacs-lisp-mode-hook ielm-mode-hook))
-    (add-hook hook #'elisp-slime-nav-mode)))
+  (progn
+    (add-hook 'prog-mode-hook 'rainbow-delimiters-mode)))
+
+(use-package rainbow-mode
+  :ensure t
+  :config
+  (add-hook 'prog-mode-hook #'rainbow-mode))
 
 (use-package paredit
   :ensure t
@@ -146,6 +158,67 @@ Start `ielm' if it's not already running."
   (add-hook 'lisp-mode-hook #'paredit-mode)
   (add-hook 'eval-expression-minibuffer-setup-hook #'paredit-mode))
 
+(use-package company
+  :ensure t
+  :config
+  (setq company-idle-delay 0.5)
+  (setq company-show-numbers t)
+  (setq company-tooltip-limit 10)
+  (setq company-minimum-prefix-length 2)
+  (setq company-tooltip-align-annotations t)
+  ;; invert the navigation direction if the the completion popup-isearch-match
+  ;; is displayed on top (happens near the bottom of windows)
+  (setq company-tooltip-flip-when-above t)
+  (add-to-list 'company-backends 'merlin-company-backend)
+  (global-company-mode))
+
+(add-hook 'emacs-lisp-mode-hook
+          (lambda ()
+            (paredit-mode t)
+            (rainbow-delimiters-mode t)
+            (show-paren-mode 1)
+            ))
+
+(add-hook 'lisp-interaction-mode
+          (lambda ()
+            (paredit-mode t)
+            (rainbow-delimiters-mode t)
+            (show-paren-mode 1)
+            ))
+
+(require 'ielm)
+
+(defun ielm/clear-repl ()
+  "Clear current REPL buffer."
+  (interactive)
+  (let ((inhibit-read-only t))
+    (erase-buffer)
+    (ielm-send-input)))
+
+(define-key inferior-emacs-lisp-mode-map
+  (kbd "M-RET")
+  #'ielm-return)
+
+(define-key inferior-emacs-lisp-mode-map
+  (kbd "C-j")
+  #'ielm-return)
+
+(define-key inferior-emacs-lisp-mode-map
+  (kbd "RET")
+  #'electric-newline-and-maybe-indent)
+
+(define-key inferior-emacs-lisp-mode-map
+  (kbd "<up>")
+  #'previous-line)
+
+(define-key inferior-emacs-lisp-mode-map
+  (kbd "<down>")
+  #'next-line)
+
+(define-key inferior-emacs-lisp-mode-map
+  (kbd "C-c C-q")
+  #'ielm/clear-repl)
+
 (use-package avy
   :ensure t
   :bind (("s-." . avy-goto-word-or-subword-1)
@@ -153,20 +226,9 @@ Start `ielm' if it's not already running."
   :config
   (setq avy-background t))
 
-(use-package rainbow-delimiters
-  :ensure t
-  :init
-  (progn
-    (add-hook 'prog-mode-hook 'rainbow-delimiters-mode)))
-
-(use-package rainbow-mode
-  :ensure t
-  :config
-  (add-hook 'prog-mode-hook #'rainbow-mode))
-
 (use-package aggressive-indent
   :ensure t
-  :init
+  :config
   (progn
     (global-aggressive-indent-mode 1)))
 
@@ -175,32 +237,18 @@ Start `ielm' if it's not already running."
   :config
   (load-theme 'doom-one t))
 
-; (use-package doom-modeline
-;   :init
-;   (setq doom-modeline-height 22)
-;   (doom-modeline-init)
-;   (doom-modeline-def-modeline
-;    'vijay
-;    '(window-number
-;      bar
-;      matches
-;      " "
-;      buffer-info
-;      buffer-position
-;      " "
-;      selection-info)
-;    '(global buffer-encoding major-mode process vcs flycheck))
-;   (doom-modeline-set-modeline 'vijay t))
-
 (use-package magit
   :ensure t
-  :bind (("C-x g" . magit-status)))
+  :bind
+  (("C-x g" . magit-status)))
 
 (use-package git-timemachine
   :ensure t
-  :bind (("s-g" . git-timemachine)))
+  :bind
+  (("s-g" . git-timemachine)))
 
 (use-package paren
+  :ensure t
   :config
   (show-paren-mode +1))
 
@@ -210,6 +258,7 @@ Start `ielm' if it's not already running."
   (which-key-mode +1))
 
 (use-package dimmer
+  :ensure t
   :config
   (setq dimmer-fraction 0.15)
   (dimmer-mode))
@@ -220,35 +269,37 @@ Start `ielm' if it's not already running."
 (use-package flx
   :ensure t)
 
-(use-package smex)
+(use-package smex
+  :ensure t)
 
 (use-package ivy
   :ensure t
   :init
-  (ivy-mode 1)
   (setq ivy-height 30)
   (setq ivy-use-virtual-buffers t)
   (defun swiper-at-point ()
     (interactive)
     (swiper (thing-at-point 'word)))
+  :config
+  (ivy-mode 1)
   :bind (("C-x b"   . ivy-switch-buffer)
          ("C-c C-r" . ivy-resume)
          ("C-c s"   . swiper-at-point)
          ("C-s"     . swiper))
   :diminish)
 
+(use-package all-the-icons
+  :ensure t)
+
 (use-package ivy-rich
-  :after counsel
-  :custom
-  (ivy-virtual-abbreviate 'full
-   ivy-rich-switch-buffer-align-virtual-buffer t
-   ivy-rich-path-style 'abbrev)
+  :ensure t
   :init
-  (ivy-rich-mode))
+  (setq ivy-rich-path-style 'abbrev)
+  :config
+  (ivy-rich-mode 1))
 
 (use-package counsel
   :ensure t
-  :after ivy
   :config
   (counsel-mode 1)
   (defun counsel-rg-at-point ()
@@ -285,6 +336,7 @@ Start `ielm' if it's not already running."
   (projectile-mode +1))
 
 (use-package counsel-projectile
+  :ensure t
   :config
   (counsel-projectile-mode))
 
@@ -296,21 +348,8 @@ Start `ielm' if it's not already running."
 
 (use-package expand-region
   :ensure t
-  :bind ("C-=" . er/expand-region))
-
-(use-package abbrev
-  :config
-  (setq save-abbrevs 'silently)
-  (setq-default abbrev-mode t))
-
-(use-package uniquify
-  :config
-  (setq uniquify-buffer-name-style 'forward)
-  (setq uniquify-separator "/")
-  ;; rename after killing uniquified
-  (setq uniquify-after-kill-buffer-p t)
-  ;; don't muck with special buffers
-  (setq uniquify-ignore-buffers-re "^\\*"))
+  :bind
+  ("C-=" . er/expand-region))
 
 ;; saveplace remembers your location in a file when saving files
 (use-package saveplace
@@ -345,22 +384,6 @@ Start `ielm' if it's not already running."
   ;; use shift + arrow keys to switch between visible buffers
   (windmove-default-keybindings))
 
-(use-package dired
-  :config
-  ;; dired - reuse current buffer by pressing 'a'
-  (put 'dired-find-alternate-file 'disabled nil)
-
-  ;; always delete and copy recursively
-  (setq dired-recursive-deletes 'always)
-  (setq dired-recursive-copies 'always)
-
-  ;; if there is a dired buffer displayed in the next window, use its
-  ;; current subdir, instead of the current subdir of this dired buffer
-  (setq dired-dwim-target t)
-
-  ;; enable some really cool extensions like C-x C-j(dired-jump)
-  (require 'dired-x))
-
 (use-package anzu
   :ensure t
   :bind (("M-%" . anzu-query-replace)
@@ -369,14 +392,18 @@ Start `ielm' if it's not already running."
   (global-anzu-mode +1))
 
 (use-package easy-kill
+  :ensure t
   :bind (([remap kill-ring-save] . easy-kill)))
 
 (use-package exec-path-from-shell
   :ensure t
   :config
-  (exec-path-from-shell-initialize))
+  (progn
+    (setq exec-path-from-shell-check-startup-files nil)
+    (exec-path-from-shell-initialize)))
 
 (use-package whitespace
+  :ensure t
   :init
   (dolist (hook '(prog-mode-hook text-mode-hook))
     (add-hook hook #'whitespace-mode))
@@ -385,32 +412,8 @@ Start `ielm' if it's not already running."
   (setq whitespace-line-column 80) ;; limit line length
   (setq whitespace-style '(face tabs empty trailing lines-tail)))
 
-(use-package flycheck-joker
-  :ensure t
-  :pin melpa-stable)
-
-(use-package flycheck
-  :ensure t
-  :pin melpa-stable
-  :config
-  (add-hook 'after-init-hook #'global-flycheck-mode))
-
 (use-package yaml-mode
   :ensure t)
-
-(use-package company
-  :ensure t
-  :config
-  (setq company-idle-delay 0.5)
-  (setq company-show-numbers t)
-  (setq company-tooltip-limit 10)
-  (setq company-minimum-prefix-length 2)
-  (setq company-tooltip-align-annotations t)
-  ;; invert the navigation direction if the the completion popup-isearch-match
-  ;; is displayed on top (happens near the bottom of windows)
-  (setq company-tooltip-flip-when-above t)
-  (add-to-list 'company-backends 'merlin-company-backend)
-  (global-company-mode))
 
 (use-package crux
   :ensure t
@@ -507,6 +510,7 @@ Start `ielm' if it's not already running."
 
 (use-package cider
   :after clojure-mode
+  :ensure t
   :config
   (setq nrepl-log-messages t)
   (setq cider-repl-use-pretty-printing t)
@@ -518,24 +522,25 @@ Start `ielm' if it's not already running."
   (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode))
 
 (use-package clj-refactor
+  :ensure t
   :after clojure-mode
   :config
   (cljr-add-keybindings-with-prefix "C-c C-r"))
 
-(use-package elixir-mode
-  :mode ("\\.exs\\'" "\\.ex\\'")
-  :config
-  (add-hook 'elixir-mode #'subword-mode))
-
-(use-package alchemist
-  :after elixir-mode
-  :config
-  (setq alchemist-mix-command "/usr/local/bin/mix")
-  (setq alchemist-execute-command "/usr/local/bin/elixir")
-  (setq alchemist-iex-program-name "/usr/local/bin/iex")
-  (setq alchemist-execute-command "/usr/local/bin/elixir")
-  (setq alchemist-compile-command "/usr/local/bin/elixirc")
-  (setq alchemist-hooks-compile-on-save t))
+(use-package haskell-mode
+  :defer t
+  :mode ("\\.lhs\\'" "\\.hs\\'")
+  :bind (:map haskell-mode-map
+              ("M-g i" . haskell-navigate-imports)
+              ("M-g M-i" . haskell-navigate-imports))
+  :init
+  (progn
+    (setq haskell-compile-cabal-build-alt-command
+          "cd %s && stack clean && stack build --ghc-options -ferror-spans"
+          haskell-compile-cabal-build-command
+          "cd %s && stack build --ghc-options -ferror-spans"
+          haskell-compile-command
+          "stack ghc -- -Wall -ferror-spans -fforce-recomp -c %s")))
 
 (use-package haskell-mode
   :mode ("\\.lhs\\'" "\\.hs\\'")
@@ -555,84 +560,17 @@ Start `ielm' if it's not already running."
   (intero-global-mode)
   (add-hook 'haskell-mode-hook 'intero-mode))
 
-(use-package utop
-  :config
-  (setq utop-command "opam config exec -- utop -emacs"))
-
-(use-package ocp-indent)
-
-(use-package tuareg
-  :init
-  (setq tuareg-indent-align-with-first-arg t)
-  (setq auto-mode-alist
-      (append '(("_oasis\\'" . conf-mode)
-    ("_tags\\'" . conf-mode)
-    ("_log\\'" . conf-mode))
-        auto-mode-alist))
-  :config
-  (add-hook 'tuareg-mode-hook
-            ;; Turn on auto-fill minor mode.
-            (lambda ()
-              (when (functionp 'prettify-symbols-mode)
-                (prettify-symbols-mode))
-              (auto-fill-mode 1)
-              (add-hook 'before-save-hook 'ocp-indent-buffer (merlin-mode))))
-  (add-hook 'tuareg-mode-hook 'utop-minor-mode)
-  (add-hook 'tuareg-mode-hook 'merlin-mode))
-
-(use-package merlin
-  :after tuareg
-  :init
-  (add-to-list 'auto-mode-alist '("/\\.merlin\\'" . conf-mode))
-  :config
-  (add-hook 'caml-mode-hook 'merlin-mode t)
-  (add-hook 'merlin-mode-hook 'company-mode))
-
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(ansi-color-names-vector
-   ["#1B2229" "#ff6c6b" "#98be65" "#ECBE7B" "#51afef" "#c678dd" "#46D9FF" "#DFDFDF"])
- '(custom-safe-themes
-   (quote
-    ("6b2636879127bf6124ce541b1b2824800afc49c6ccd65439d6eb987dbf200c36" "1c082c9b84449e54af757bcae23617d11f563fc9f33a832a8a2813c4d7dfb652" default)))
- '(fci-rule-color "#5B6268")
- '(jdee-db-active-breakpoint-face-colors (cons "#1B2229" "#51afef"))
- '(jdee-db-requested-breakpoint-face-colors (cons "#1B2229" "#98be65"))
- '(jdee-db-spec-breakpoint-face-colors (cons "#1B2229" "#3f444a"))
  '(package-selected-packages
    (quote
-    (counsel-projectile ivy-rich smex dimmer doom-modeline doom-themes flycheck flycheck-joker intero haskell-mode cider clojure-mode paredit elisp-slime-nav move-text adoc-mode markdown-mode hl-todo imenu-anywhere super-save diff-hl undo-tree volatile-highlights crux company yaml-mode exec-path-from-shell easy-kill anzu git-timemachine expand-region ace-window spacemacs-theme flx projectile ag try counsel which-key magit zenburn-theme aggressive-indent rainbow-delimiters rainbow-identifiers use-package)))
- '(vc-annotate-background "#282c34")
- '(vc-annotate-color-map
-   (list
-    (cons 20 "#98be65")
-    (cons 40 "#b4be6c")
-    (cons 60 "#d0be73")
-    (cons 80 "#ECBE7B")
-    (cons 100 "#e6ab6a")
-    (cons 120 "#e09859")
-    (cons 140 "#da8548")
-    (cons 160 "#d38079")
-    (cons 180 "#cc7cab")
-    (cons 200 "#c678dd")
-    (cons 220 "#d974b7")
-    (cons 240 "#ec7091")
-    (cons 260 "#ff6c6b")
-    (cons 280 "#cf6162")
-    (cons 300 "#9f585a")
-    (cons 320 "#6f4e52")
-    (cons 340 "#5B6268")
-    (cons 360 "#5B6268")))
- '(vc-annotate-very-old-color nil))
+    (flymake-hlint flymake-easy hlint-refactor haskell-snippets exec-path-from-shell use-package))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
-;; ## added by OPAM user-setup for emacs / base ## 56ab50dc8996d2bb95e7856a6eddb17b ## you can edit, but keep this line
-(require 'opam-user-setup "~/.emacs.d/opam-user-setup.el")
-;; ## end of OPAM user-setup addition for emacs / base ## keep this line
