@@ -561,6 +561,26 @@
   (intero-global-mode)
   (add-hook 'haskell-mode-hook 'intero-mode))
 
+(use-package ensime
+  :ensure t)
+
+(use-package scala-mode
+  :after ensime
+  :ensure t
+  :interpreter
+  ("scala" . scala-mode))
+
+(use-package sbt-mode
+  :after ensime
+  :commands sbt-start sbt-command
+  :config
+  ;; WORKAROUND: https://github.com/ensime/emacs-sbt-mode/issues/31
+  ;; allows using SPACE when in the minibuffer
+  (substitute-key-definition
+   'minibuffer-complete-word
+   'self-insert-command
+   minibuffer-local-completion-map))
+
 (use-package org
   :commands (org-mode)
   :bind(("C-c l" . org-store-link)
@@ -589,7 +609,8 @@
    '(
      (python . t)
      (shell . t)
-     (clojure . t))))
+     (clojure . t)
+     (scala . t))))
 
 (use-package ox-gfm
   :ensure t)
@@ -614,7 +635,7 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (htmlize ox-gfm ox-html ox-md flymake-hlint flymake-easy hlint-refactor haskell-snippets exec-path-from-shell use-package))))
+    (ensime htmlize ox-gfm ox-html ox-md flymake-hlint flymake-easy hlint-refactor haskell-snippets exec-path-from-shell use-package))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
