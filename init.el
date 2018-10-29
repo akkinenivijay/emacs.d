@@ -597,7 +597,15 @@
 (use-package org-bullets
   :ensure t
   :commands (org-bullets-mode)
-  :init (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+  :config (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+
+(use-package htmlize
+  :ensure t
+  :commands (htmlize-buffer
+             htmlize-file
+             htmlize-many-files
+             htmlize-many-files-dired
+             htmlize-region))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -606,7 +614,7 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (ox-gfm ox-html ox-md flymake-hlint flymake-easy hlint-refactor haskell-snippets exec-path-from-shell use-package))))
+    (htmlize ox-gfm ox-html ox-md flymake-hlint flymake-easy hlint-refactor haskell-snippets exec-path-from-shell use-package))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
