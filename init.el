@@ -601,8 +601,9 @@
 	org-src-fontify-natively t
 	org-src-tab-acts-natively t
 	org-src-window-setup 'current-window
-        org-startup-indented t
-	org-confirm-babel-evaluate nil)
+  org-startup-indented t
+	org-confirm-babel-evaluate nil
+  org-html-htmlize-output-type nil)
   (org-indent-mode 1)
   (org-babel-do-load-languages
    'org-babel-load-languages
@@ -632,6 +633,12 @@
              htmlize-many-files
              htmlize-many-files-dired
              htmlize-region))
+
+(use-package ox-html
+  :init
+  (setq org-html-postamble t)
+  (setq org-export-with-section-numbers nil)
+  (setq org-export-with-toc t))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
